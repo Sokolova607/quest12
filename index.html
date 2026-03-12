@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🐱 Котик в классе</title>
   <style>
-    /* === СБРОС И БАЗОВЫЕ СТИЛИ === */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,7 +16,6 @@
       padding: 20px;
     }
 
-    /* === КОНТЕЙНЕР ИГРЫ === */
     .game-container {
       display: flex;
       width: 100%;
@@ -29,7 +27,6 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
 
-    /* === БОКОВАЯ ПАНЕЛЬ === */
     .sidebar {
       width: 250px;
       background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
@@ -94,7 +91,6 @@
       box-shadow: 0 8px 20px rgba(238, 90, 36, 0.4);
     }
 
-    /* === ЦЕНТРАЛЬНАЯ ОБЛАСТЬ === */
     .main-area {
       flex: 1;
       position: relative;
@@ -127,7 +123,6 @@
       pointer-events: none;
     }
 
-    /* === МОДАЛЬНОЕ ОКНО === */
     .modal {
       display: none;
       position: fixed;
@@ -190,7 +185,6 @@
       min-height: 400px;
     }
 
-    /* Статус внутри модалки */
     .game-status {
       position: absolute;
       top: 0; left: 0;
@@ -206,7 +200,6 @@
     }
     .game-status.show { display: flex; }
     .game-status.success { color: #27ae60; }
-    .game-status.pending { color: #e67e22; }
     .game-status h4 { font-size: 1.5rem; margin-bottom: 10px; }
     .game-status p { font-size: 1rem; color: #555; }
 
@@ -230,7 +223,6 @@
     }
     .btn-done:hover { transform: translateY(-2px); }
 
-    /* === ФИНАЛЬНОЕ МОДАЛЬНОЕ ОКНО === */
     .modal-final {
       text-align: center;
       padding: 40px;
@@ -264,7 +256,6 @@
     }
     .btn-restart:hover { transform: translateY(-2px); }
 
-    /* === АДАПТИВ === */
     @media (max-width: 768px) {
       .game-container { flex-direction: column; height: auto; }
       .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 15px; }
@@ -285,7 +276,7 @@
       📋 Поработать у доски
     </button>
     
-    <button class="btn btn-action" id="btn-tablet" data-preview="https://via.placeholder.com/800x600/764ba2/ffffff?text=Планшет+с+играми">
+    <button class="btn btn-action" id="btn-tablet" data-preview="https://via.placeholder.com/800x600/764ba2/ffffff?text=Планшет+скоро+будет">
       📱 Поработать на планшете
     </button>
     
@@ -319,7 +310,6 @@
     <div class="modal-body">
       <iframe id="game-frame" src="about:blank" title="Mini-game" sandbox="allow-scripts allow-same-origin"></iframe>
       
-      <!-- Статус игры поверх iframe -->
       <div class="game-status" id="game-status">
         <h4 id="status-title">Заголовок</h4>
         <p id="status-text">Текст статуса</p>
@@ -342,14 +332,12 @@
 </div>
 
 <script>
-  // === СОСТОЯНИЕ ИГРЫ ===
   const gameState = {
     boardDone: false,
     tabletDone: false,
     phonePlayed: false
   };
 
-  // === ЭЛЕМЕНТЫ DOM ===
   const mainImage = document.getElementById('main-image');
   const previewHint = document.getElementById('preview-hint');
   const defaultImage = mainImage.src;
@@ -374,10 +362,9 @@
   const btnRestart = document.getElementById('btn-restart');
 
   let currentActivity = null;
-  let currentGameType = null; // 'board', 'tablet', 'phone'
+  let currentGameType = null;
 
-  // === ПРЕВЬЮ ПРИ НАВЕДЕНИИ ===
-  [btnBoard, btnTablet].forEach(btn => {
+  [btnBoard].forEach(btn => {
     btn.addEventListener('mouseenter', () => {
       const preview = btn.dataset.preview;
       if (preview) {
@@ -399,20 +386,15 @@
     });
   });
 
-  // === ОТКРЫТИЕ МОДАЛКИ С ИГРОЙ ===
   function openGameModal(title, gameUrl, isPractice, gameType) {
     currentActivity = title;
     currentGameType = gameType;
     modalTitle.textContent = title;
     
-    // Сброс статуса
     hideGameStatus();
-    
-    // Загрузка игры
     gameFrame.src = gameUrl;
     gameModal.style.display = 'flex';
     
-    // Кнопка "Выполнено" только для учебных заданий
     btnDone.style.display = isPractice ? 'inline-block' : 'none';
   }
 
@@ -426,16 +408,13 @@
     gameStatus.className = 'game-status';
   }
 
-  // === ОБРАБОТКА СООБЩЕНИЙ ОТ IFRAME (postMessage) ===
   window.addEventListener('message', (event) => {
-    // Принимаем сообщения только от своих файлов (безопасность)
     const allowedOrigins = [window.location.origin, 'null'];
     if (!allowedOrigins.includes(event.origin)) return;
 
     const data = event.data;
     
     if (data && data.type === 'GAME_COMPLETED') {
-      // Игра пройдена!
       handleGameWin(currentGameType);
     }
   });
@@ -444,44 +423,34 @@
     if (gameType === 'board') {
       gameState.boardDone = true;
       btnBoard.classList.add('completed');
-      btnBoard.textContent = '✅ У доски: выполнено';
+      btnBoard.textContent = '✅ Выполнено!';
       btnBoard.disabled = true;
-    } else if (gameType === 'tablet') {
-      gameState.tabletDone = true;
-      btnTablet.classList.add('completed');
-      btnTablet.textContent = '✅ Планшет: выполнено';
-      btnTablet.disabled = true;
     }
     
-    // Показываем статус в модалке
     showGameStatus('success', '🎉 Игра пройдена!', 'Ты молодец! Задание выполнено.');
-    
-    // Блокируем iframe и кнопку "Выполнено"
     gameFrame.style.pointerEvents = 'none';
     btnDone.style.display = 'none';
   }
 
-  // === ОБРАБОТЧИКИ КНОПОК АКТИВНОСТЕЙ ===
+  // ТОЛЬКО ДОСКА открывает игру!
   btnBoard.addEventListener('click', () => {
     if (!gameState.boardDone) {
-      // 🔧 Путь к твоей игре для доски
       openGameModal('Поработать у доски', 'game1.html', true, 'board');
     }
   });
 
+  // Планшет пока неактивен (показываем сообщение)
   btnTablet.addEventListener('click', () => {
     if (!gameState.tabletDone) {
-      // 🔧 Путь к игре для планшета (можно ту же game1.html или другую)
-      openGameModal('Поработать на планшете', 'game1.html', true, 'tablet');
+      alert('🚧 Игра для планшета скоро будет добавлена!');
     }
   });
 
   btnPhone.addEventListener('click', () => {
     gameState.phonePlayed = true;
-    openGameModal('Поиграть в телефоне', 'game1.html', false, 'phone');
+    alert('🎮 Ты поиграл в телефоне!');
   });
 
-  // === ЗАКРЫТИЕ МОДАЛКИ ===
   modalClose.addEventListener('click', () => {
     gameModal.style.display = 'none';
     gameFrame.src = 'about:blank';
@@ -497,23 +466,16 @@
     }
   });
 
-  // === КНОПКА "Я ВЫПОЛНИЛ" (резервный вариант) ===
   btnDone.addEventListener('click', () => {
     if (currentGameType === 'board') {
       gameState.boardDone = true;
       btnBoard.classList.add('completed');
-      btnBoard.textContent = '✅ У доски: выполнено';
+      btnBoard.textContent = '✅ Выполнено!';
       btnBoard.disabled = true;
-    } else if (currentGameType === 'tablet') {
-      gameState.tabletDone = true;
-      btnTablet.classList.add('completed');
-      btnTablet.textContent = '✅ Планшет: выполнено';
-      btnTablet.disabled = true;
     }
     modalClose.click();
   });
 
-  // === ЛОГИКА ВЫХОДА ИЗ КЛАССА ===
   btnExit.addEventListener('click', () => {
     let message = '';
     let emoji = '👩‍🏫';
@@ -522,7 +484,7 @@
       message = 'Ты недостаточно поработал! Остаёшься ещё на час, котик! 😿';
       emoji = '😤';
     } else if (gameState.boardDone && gameState.tabletDone) {
-      message = 'Умничка! Ты отлично справился со всеми заданиями, можешь идти домой! 🎉🐱';
+      message = 'Умничка! Ты отлично справился со всеми заданиями, можешь идти домой! 🎉';
       emoji = '🥰';
     } else {
       message = 'Молодец, что старался, но нужно усерднее учиться. Попробуй ещё разок! 📚✨';
@@ -534,7 +496,6 @@
     finalModal.style.display = 'flex';
   });
 
-  // === ПЕРЕЗАПУСК ИГРЫ ===
   btnRestart.addEventListener('click', () => {
     gameState.boardDone = false;
     gameState.tabletDone = false;
@@ -556,10 +517,9 @@
     mainImage.src = defaultImage;
   });
 
-  // Закрытие финальной модалки по клику вне
   finalModal.addEventListener('click', (e) => {
     if (e.target === finalModal) {
-      // Не закрывать, чтобы игрок увидел сообщение
+      // Не закрывать
     }
   });
 </script>
