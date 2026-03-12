@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🐱 Котик в классе</title>
+  <style>
+    /* === СБРОС И БАЗОВЫЕ СТИЛИ === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* === КОНТЕЙНЕР ИГРЫ === */
+    .game-container {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      height: 90vh;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    /* === БОКОВАЯ ПАНЕЛЬ === */
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+      padding: 25px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h2 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+    }
+
+    .btn {
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-action:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    .btn-action:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      opacity: 0.7;
+    }
+    .btn-action.completed {
+      background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    }
+
+    .btn-play {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .btn-play:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-exit {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+      margin-top: auto;
+    }
+    .btn-exit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(238, 90, 36, 0.4);
+    }
+
+    /* === ЦЕНТРАЛЬНАЯ ОБЛАСТЬ === */
+    .main-area {
+      flex: 1;
+      position: relative;
+      background: #ecf0f1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .main-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.3s ease;
+    }
+
+    .preview-hint {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    /* === МОДАЛЬНОЕ ОКНО === */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .modal-header {
+      padding: 15px 25px;
+      background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 { font-size: 1.2rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.8rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+    .modal-close:hover { transform: scale(1.2); }
+
+    .modal-body {
+      flex: 1;
+      padding: 0;
+      min-height: 400px;
+      position: relative;
+    }
+
+    .modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      min-height: 400px;
+    }
+
+    /* Статус внутри модалки */
+    .game-status {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.95);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      z-index: 10;
+    }
+    .game-status.show { display: flex; }
+    .game-status.success { color: #27ae60; }
+    .game-status.pending { color: #e67e22; }
+    .game-status h4 { font-size: 1.5rem; margin-bottom: 10px; }
+    .game-status p { font-size: 1rem; color: #555; }
+
+    .modal-footer {
+      padding: 15px 25px;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-done {
+      background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-done:hover { transform: translateY(-2px); }
+
+    /* === ФИНАЛЬНОЕ МОДАЛЬНОЕ ОКНО === */
+    .modal-final {
+      text-align: center;
+      padding: 40px;
+    }
+    .modal-final h2 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    .modal-final p {
+      font-size: 1.2rem;
+      color: #555;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+    .teacher-avatar {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .btn-restart {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 14px 40px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-restart:hover { transform: translateY(-2px); }
+
+    /* === АДАПТИВ === */
+    @media (max-width: 768px) {
+      .game-container { flex-direction: column; height: auto; }
+      .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 15px; }
+      .sidebar h2 { width: 100%; margin-bottom: 10px; }
+      .btn { flex: 1; min-width: 120px; padding: 10px 8px; font-size: 0.9rem; }
+      .btn-exit { margin-top: 10px; width: 100%; }
+      .main-area { min-height: 400px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <aside class="sidebar">
+    <h2>🐱 Котик в классе</h2>
+    
+    <button class="btn btn-action" id="btn-board" data-preview="https://via.placeholder.com/800x600/667eea/ffffff?text=Доска+с+заданиями">
+      📋 Поработать у доски
+    </button>
+    
+    <button class="btn btn-action" id="btn-tablet" data-preview="https://via.placeholder.com/800x600/764ba2/ffffff?text=Планшет+с+играми">
+      📱 Поработать на планшете
+    </button>
+    
+    <button class="btn btn-play" id="btn-phone">
+      🎮 Поиграть в телефоне
+    </button>
+    
+    <button class="btn btn-exit" id="btn-exit">
+      🚪 Выйти из класса
+    </button>
+  </aside>
+
+  <main class="main-area">
+    <div class="preview-hint" id="preview-hint">Наведи для превью</div>
+    <img 
+      src="https://via.placeholder.com/1200x800/ecf0f1/2c3e50?text=Класс+после+уроков" 
+      alt="Класс" 
+      class="main-image" 
+      id="main-image"
+    >
+  </main>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО С ИГРОЙ -->
+<div class="modal" id="game-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">Задание</h3>
+      <button class="modal-close" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="game-frame" src="about:blank" title="Mini-game" sandbox="allow-scripts allow-same-origin"></iframe>
+      
+      <!-- Статус игры поверх iframe -->
+      <div class="game-status" id="game-status">
+        <h4 id="status-title">Заголовок</h4>
+        <p id="status-text">Текст статуса</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-done" id="btn-done">✅ Я выполнил задание!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ФИНАЛЬНОЕ МОДАЛЬНОЕ ОКНО -->
+<div class="modal" id="final-modal">
+  <div class="modal-content modal-final">
+    <span class="teacher-avatar" id="teacher-emoji">👩‍🏫</span>
+    <h2>Учительница говорит:</h2>
+    <p id="final-message">Текст сообщения...</p>
+    <button class="btn-restart" id="btn-restart">🔄 Начать заново</button>
+  </div>
+</div>
+
+<script>
+  // === СОСТОЯНИЕ ИГРЫ ===
+  const gameState = {
+    boardDone: false,
+    tabletDone: false,
+    phonePlayed: false
+  };
+
+  // === ЭЛЕМЕНТЫ DOM ===
+  const mainImage = document.getElementById('main-image');
+  const previewHint = document.getElementById('preview-hint');
+  const defaultImage = mainImage.src;
+
+  const btnBoard = document.getElementById('btn-board');
+  const btnTablet = document.getElementById('btn-tablet');
+  const btnPhone = document.getElementById('btn-phone');
+  const btnExit = document.getElementById('btn-exit');
+
+  const gameModal = document.getElementById('game-modal');
+  const finalModal = document.getElementById('final-modal');
+  const modalClose = document.getElementById('modal-close');
+  const modalTitle = document.getElementById('modal-title');
+  const gameFrame = document.getElementById('game-frame');
+  const btnDone = document.getElementById('btn-done');
+  const gameStatus = document.getElementById('game-status');
+  const statusTitle = document.getElementById('status-title');
+  const statusText = document.getElementById('status-text');
+
+  const finalMessage = document.getElementById('final-message');
+  const teacherEmoji = document.getElementById('teacher-emoji');
+  const btnRestart = document.getElementById('btn-restart');
+
+  let currentActivity = null;
+  let currentGameType = null; // 'board', 'tablet', 'phone'
+
+  // === ПРЕВЬЮ ПРИ НАВЕДЕНИИ ===
+  [btnBoard, btnTablet].forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      const preview = btn.dataset.preview;
+      if (preview) {
+        mainImage.style.opacity = '0';
+        setTimeout(() => {
+          mainImage.src = preview;
+          mainImage.style.opacity = '1';
+        }, 150);
+        previewHint.style.opacity = '1';
+      }
+    });
+    btn.addEventListener('mouseleave', () => {
+      mainImage.style.opacity = '0';
+      setTimeout(() => {
+        mainImage.src = defaultImage;
+        mainImage.style.opacity = '1';
+      }, 150);
+      previewHint.style.opacity = '0';
+    });
+  });
+
+  // === ОТКРЫТИЕ МОДАЛКИ С ИГРОЙ ===
+  function openGameModal(title, gameUrl, isPractice, gameType) {
+    currentActivity = title;
+    currentGameType = gameType;
+    modalTitle.textContent = title;
+    
+    // Сброс статуса
+    hideGameStatus();
+    
+    // Загрузка игры
+    gameFrame.src = gameUrl;
+    gameModal.style.display = 'flex';
+    
+    // Кнопка "Выполнено" только для учебных заданий
+    btnDone.style.display = isPractice ? 'inline-block' : 'none';
+  }
+
+  function showGameStatus(type, title, text) {
+    gameStatus.className = 'game-status show ' + type;
+    statusTitle.textContent = title;
+    statusText.textContent = text;
+  }
+
+  function hideGameStatus() {
+    gameStatus.className = 'game-status';
+  }
+
+  // === ОБРАБОТКА СООБЩЕНИЙ ОТ IFRAME (postMessage) ===
+  window.addEventListener('message', (event) => {
+    // Принимаем сообщения только от своих файлов (безопасность)
+    const allowedOrigins = [window.location.origin, 'null'];
+    if (!allowedOrigins.includes(event.origin)) return;
+
+    const data = event.data;
+    
+    if (data && data.type === 'GAME_COMPLETED') {
+      // Игра пройдена!
+      handleGameWin(currentGameType);
+    }
+  });
+
+  function handleGameWin(gameType) {
+    if (gameType === 'board') {
+      gameState.boardDone = true;
+      btnBoard.classList.add('completed');
+      btnBoard.textContent = '✅ У доски: выполнено';
+      btnBoard.disabled = true;
+    } else if (gameType === 'tablet') {
+      gameState.tabletDone = true;
+      btnTablet.classList.add('completed');
+      btnTablet.textContent = '✅ Планшет: выполнено';
+      btnTablet.disabled = true;
+    }
+    
+    // Показываем статус в модалке
+    showGameStatus('success', '🎉 Игра пройдена!', 'Ты молодец! Задание выполнено.');
+    
+    // Блокируем iframe и кнопку "Выполнено"
+    gameFrame.style.pointerEvents = 'none';
+    btnDone.style.display = 'none';
+  }
+
+  // === ОБРАБОТЧИКИ КНОПОК АКТИВНОСТЕЙ ===
+  btnBoard.addEventListener('click', () => {
+    if (!gameState.boardDone) {
+      // 🔧 Путь к твоей игре для доски
+      openGameModal('Поработать у доски', 'game1.html', true, 'board');
+    }
+  });
+
+  btnTablet.addEventListener('click', () => {
+    if (!gameState.tabletDone) {
+      // 🔧 Путь к игре для планшета (можно ту же game1.html или другую)
+      openGameModal('Поработать на планшете', 'game1.html', true, 'tablet');
+    }
+  });
+
+  btnPhone.addEventListener('click', () => {
+    gameState.phonePlayed = true;
+    openGameModal('Поиграть в телефоне', 'game1.html', false, 'phone');
+  });
+
+  // === ЗАКРЫТИЕ МОДАЛКИ ===
+  modalClose.addEventListener('click', () => {
+    gameModal.style.display = 'none';
+    gameFrame.src = 'about:blank';
+    gameFrame.style.pointerEvents = 'auto';
+    hideGameStatus();
+    currentActivity = null;
+    currentGameType = null;
+  });
+
+  gameModal.addEventListener('click', (e) => {
+    if (e.target === gameModal) {
+      modalClose.click();
+    }
+  });
+
+  // === КНОПКА "Я ВЫПОЛНИЛ" (резервный вариант) ===
+  btnDone.addEventListener('click', () => {
+    if (currentGameType === 'board') {
+      gameState.boardDone = true;
+      btnBoard.classList.add('completed');
+      btnBoard.textContent = '✅ У доски: выполнено';
+      btnBoard.disabled = true;
+    } else if (currentGameType === 'tablet') {
+      gameState.tabletDone = true;
+      btnTablet.classList.add('completed');
+      btnTablet.textContent = '✅ Планшет: выполнено';
+      btnTablet.disabled = true;
+    }
+    modalClose.click();
+  });
+
+  // === ЛОГИКА ВЫХОДА ИЗ КЛАССА ===
+  btnExit.addEventListener('click', () => {
+    let message = '';
+    let emoji = '👩‍🏫';
+
+    if (!gameState.boardDone && !gameState.tabletDone) {
+      message = 'Ты недостаточно поработал! Остаёшься ещё на час, котик! 😿';
+      emoji = '😤';
+    } else if (gameState.boardDone && gameState.tabletDone) {
+      message = 'Умничка! Ты отлично справился со всеми заданиями, можешь идти домой! 🎉🐱';
+      emoji = '🥰';
+    } else {
+      message = 'Молодец, что старался, но нужно усерднее учиться. Попробуй ещё разок! 📚✨';
+      emoji = '🤔';
+    }
+
+    teacherEmoji.textContent = emoji;
+    finalMessage.textContent = message;
+    finalModal.style.display = 'flex';
+  });
+
+  // === ПЕРЕЗАПУСК ИГРЫ ===
+  btnRestart.addEventListener('click', () => {
+    gameState.boardDone = false;
+    gameState.tabletDone = false;
+    gameState.phonePlayed = false;
+    
+    btnBoard.classList.remove('completed');
+    btnBoard.textContent = '📋 Поработать у доски';
+    btnBoard.disabled = false;
+    
+    btnTablet.classList.remove('completed');
+    btnTablet.textContent = '📱 Поработать на планшете';
+    btnTablet.disabled = false;
+    
+    finalModal.style.display = 'none';
+    gameModal.style.display = 'none';
+    gameFrame.src = 'about:blank';
+    gameFrame.style.pointerEvents = 'auto';
+    hideGameStatus();
+    mainImage.src = defaultImage;
+  });
+
+  // Закрытие финальной модалки по клику вне
+  finalModal.addEventListener('click', (e) => {
+    if (e.target === finalModal) {
+      // Не закрывать, чтобы игрок увидел сообщение
+    }
+  });
+</script>
+
+</body>
+</html>
