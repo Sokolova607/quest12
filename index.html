@@ -220,8 +220,10 @@
       font-weight: 600;
       cursor: pointer;
       transition: transform 0.2s;
+      display: none; /* СКРЫТА ПО УМОЛЧАНИЮ */
     }
     .btn-done:hover { transform: translateY(-2px); }
+    .btn-done.show { display: inline-block; } /* ПОКАЗЫВАЕМ КОГДА НУЖНО */
 
     .modal-final {
       text-align: center;
@@ -300,7 +302,6 @@
   </main>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО С ИГРОЙ -->
 <div class="modal" id="game-modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -316,15 +317,14 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-done" id="btn-done">✅ Я выполнил задание!</button>
+      <button class="btn btn-done" id="btn-done">✅ Закрыть окно</button>
     </div>
   </div>
 </div>
 
-<!-- ФИНАЛЬНОЕ МОДАЛЬНОЕ ОКНО -->
 <div class="modal" id="final-modal">
   <div class="modal-content modal-final">
-    <span class="teacher-avatar" id="teacher-emoji">👩‍🏫</span>
+    <span class="teacher-avatar" id="teacher-emoji">👩🏫</span>
     <h2>Учительница говорит:</h2>
     <p id="final-message">Текст сообщения...</p>
     <button class="btn-restart" id="btn-restart">🔄 Начать заново</button>
@@ -395,7 +395,9 @@
     gameFrame.src = gameUrl;
     gameModal.style.display = 'flex';
     
-    btnDone.style.display = isPractice ? 'inline-block' : 'none';
+    // СКРЫВАЕМ кнопку при открытии игры
+    btnDone.classList.remove('show');
+    btnDone.style.display = 'none';
   }
 
   function showGameStatus(type, title, text) {
@@ -429,17 +431,18 @@
     
     showGameStatus('success', '🎉 Игра пройдена!', 'Ты молодец! Задание выполнено.');
     gameFrame.style.pointerEvents = 'none';
-    btnDone.style.display = 'none';
+    
+    // ПОКАЗЫВАЕМ кнопку ТОЛЬКО после победы
+    btnDone.classList.add('show');
+    btnDone.style.display = 'inline-block';
   }
 
-  // ТОЛЬКО ДОСКА открывает игру!
   btnBoard.addEventListener('click', () => {
     if (!gameState.boardDone) {
       openGameModal('Поработать у доски', 'game1.html', true, 'board');
     }
   });
 
-  // Планшет пока неактивен (показываем сообщение)
   btnTablet.addEventListener('click', () => {
     if (!gameState.tabletDone) {
       alert('🚧 Игра для планшета скоро будет добавлена!');
@@ -456,6 +459,8 @@
     gameFrame.src = 'about:blank';
     gameFrame.style.pointerEvents = 'auto';
     hideGameStatus();
+    btnDone.classList.remove('show');
+    btnDone.style.display = 'none';
     currentActivity = null;
     currentGameType = null;
   });
@@ -467,12 +472,6 @@
   });
 
   btnDone.addEventListener('click', () => {
-    if (currentGameType === 'board') {
-      gameState.boardDone = true;
-      btnBoard.classList.add('completed');
-      btnBoard.textContent = '✅ Выполнено!';
-      btnBoard.disabled = true;
-    }
     modalClose.click();
   });
 
@@ -514,6 +513,8 @@
     gameFrame.src = 'about:blank';
     gameFrame.style.pointerEvents = 'auto';
     hideGameStatus();
+    btnDone.classList.remove('show');
+    btnDone.style.display = 'none';
     mainImage.src = defaultImage;
   });
 
